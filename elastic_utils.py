@@ -2,11 +2,11 @@ from elasticsearch import Elasticsearch
 from config import ELASTICSEARCH_HOST, ELASTICSEARCH_PORT, INDEX_NAME
 
 def get_elasticsearch_client():
-    """Elasticsearch 클라이언트를 생성합니다."""
+    """generate Elasticsearch client"""
     return Elasticsearch(f"http://{ELASTICSEARCH_HOST}:{ELASTICSEARCH_PORT}")
 
 def create_index(client):
-    """문서를 저장할 인덱스를 생성합니다."""
+    """create index for storing documents"""
     index_body = {
         "mappings": {
             "properties": {

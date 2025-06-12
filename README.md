@@ -12,38 +12,27 @@
 
 ## 필요 조건
 
-- Python 3.8 이상
-- Elasticsearch 8.x
-- Ollama
-- 필요한 Python 패키지 (requirements.txt 참조)
+- `python3.10`
+- `Elasticsearch 7.x`
+- Model : `qwen32b`
 
 ## 설치 방법
-
-1. 저장소 클론
 ```bash
 git clone <repository-url>
 cd <repository-name>
 ```
 
-2. 가상환경 생성 및 활성화
-```bash
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# 또는
-.\venv\Scripts\activate  # Windows
-```
-
-3. 필요한 패키지 설치
+3. install python packages
 ```bash
 pip install -r requirements.txt
 ```
 
-4. Elasticsearch 실행 확인
+4. Elasticsearch
 ```bash
 curl http://localhost:9200
 ```
 
-5. Ollama 설치 및 실행
+5. Ollama
 ```bash
 curl https://ollama.ai/install.sh | sh
 ollama run qwen3:32b
@@ -94,3 +83,6 @@ python start.py 'def process_input(user_input):\n    cmd = f"ls {user_input}"\n 
 - 코드에 줄바꿈이 있는 경우 `\n`을 사용하여 표현하세요.
 - RAG 모드(기본)는 Elasticsearch의 취약점 데이터베이스를 활용하여 더 정확한 분석을 제공합니다.
 - RAG 비활성화 모드는 LLM만을 사용하여 빠른 분석을 제공하지만, 정확도가 다소 낮을 수 있습니다. 
+
+## TODO
+- 파일명을 입력 받아 json 파일을 검사하도록 하는 로직 추가(입력받은 json 파일의 `index`를 읽어 `code_before`를 식별하도록)
