@@ -1,13 +1,17 @@
 # RAG 기반 코드 취약점 분석 시스템
 
-이 시스템은 Retrieval-Augmented Generation (RAG)을 활용하여 코드의 취약점을 분석하는 도구입니다. Elasticsearch를 지식 베이스로 사용하고, Ollama를 통해 LLM을 활용합니다.
+이 시스템은 Retrieval-Augmented Generation (RAG)을 활용하여 코드의 취약점을 분석하는 도구로 Elasticsearch를 지식 베이스를 검색하는 용도로 사용하고, Ollama를 통해 LLM을 호출함.
+
+## 아키텍처(현재)
+<img width="1331" alt="image" src="https://github.com/user-attachments/assets/329eb142-ac08-4ada-8fa4-4ae659e67805" />
+
 
 ## 시스템 구조
 
 1. **기능적 의미 추출**: 입력된 코드의 기능적 의미를 LLM을 통해 추출
 2. **유사 취약점 검색**: 
    - BM25 알고리즘을 사용한 초기 검색
-   - RRF(Reciprocal Rank Fusion)를 통한 후보 재정렬
+   - 식별된 점수를 기준으로 정렬
 3. **취약점 판단**: 검색된 유사 취약점 정보를 기반으로 LLM이 최종 판단
 
 ## 필요 조건

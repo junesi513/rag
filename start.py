@@ -1,25 +1,57 @@
-from rag import VulRAG
-import os
-import sys
+# junesi513/rag/rag-8ee72d8e489f6f6dbff76adc48d163ed2208e189/start.py
+
+import json
 import argparse
+import sys
+from rag import VulRAG
+
+def load_code_from_json(json_path: str, vul_id: str) -> str:
+    """JSON 파일에서 특정 id의 코드를 로드합니다."""
+    try:
+        with open(json_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        if not isinstance(data, list):
+            raise ValueError("JSON 파일은 배열(list) 형태여야 합니다.")
+            
+        target_item = next((item for item in data if item.get('id') == vul_id), None)
+            
+        if target_item is None:
+            raise ValueError(f"ID '{vul_id}'에 해당하는 항목을 찾을 수 없습니다.")
+            
+        files = target_item.get('files')
+        if not files or not isinstance(files, list) or len(files) == 0:
+            raise ValueError("JSON 항목에 'files' 배열이 없거나 비어있습니다.")
+            
+        code_before = files[0].get('code_before')
+        if code_before is None:
+            raise ValueError("첫 번째 file 객체에 'code_before' 키가 없습니다.")
+            
+        return code_before
+    except FileNotFoundError:
+        raise FileNotFoundError(f"파일을 찾을 수 없습니다: {json_path}")
+    except json.JSONDecodeError:
+        raise ValueError(f"잘못된 JSON 형식입니다: {json_path}")
+    except Exception as e:
+        # 그 외 예외 처리
+        raise type(e)(f"코드를 로드하는 중 에러 발생: {e}")
+
 
 def main():
-    # 커맨드라인 인자 파싱
+    """메인 실행 함수"""
     parser = argparse.ArgumentParser(
         description='코드 취약점 분석 도구 (Code Vulnerability Analysis Tool)',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
         epilog='''
 사용 예시:
-  # RAG를 사용하여 취약점 분석 (기본 모드)
-  python start.py 'def process_input(user_input):\\n    cmd = f"ls {user_input}"\\n    os.system(cmd)'
+  1. 직접 코드 입력:
+     python start.py 'public class MyClass {{ ... }}'
 
-  # RAG 비활성화 모드로 취약점 분석 (LLM만 사용)
-  python start.py --disable-rag 'def vulnerable_code():\\n    pass'
+  2. RAG 비활성화:
+     python start.py --disable-rag 'public class MyClass {{ ... }}'
 
-참고:
-  - RAG 모드(기본)는 Elasticsearch의 취약점 데이터베이스를 활용하여 더 정확한 분석을 제공합니다.
-  - RAG 비활성화 모드는 LLM만을 사용하여 빠른 분석을 제공하지만, 정확도가 다소 낮을 수 있습니다.
-  - 분석하려는 코드에 줄바꿈이 있는 경우 \\n을 사용하여 표현하세요.
+  3. JSON 파일에서 코드 로드:
+     python start.py --json-file path/to/your/data.json --id cve-2022-1234
 '''
     )
     
@@ -28,78 +60,56 @@ def main():
         nargs='?',
         help='분석할 코드 (작은따옴표로 감싸서 입력)'
     )
-    
     parser.add_argument(
         '--disable-rag',
         action='store_true',
-        help='RAG 기능을 비활성화하고 LLM만 사용하여 분석 (기본값: RAG 활성화)'
+        help='RAG 기능을 비활성화하고 LLM만 사용하여 분석'
+    )
+    parser.add_argument(
+        '--json-file',
+        help='분석할 코드가 포함된 JSON 파일 경로'
+    )
+    parser.add_argument(
+        '--id',
+        help='JSON 파일에서 로드할 코드의 ID'
     )
 
     args = parser.parse_args()
 
-    if not args.code:
-        parser.print_help()
+    code_snippet = ""
+    try:
+        if args.json_file:
+            if not args.id:
+                parser.error("--json-file 옵션을 사용할 때는 --id도 지정해야 합니다.")
+            if args.code:
+                parser.error("--json-file 옵션과 직접 코드 입력은 동시에 사용할 수 없습니다.")
+            
+            code_snippet = load_code_from_json(args.json_file, args.id)
+            print(f"\n코드를 성공적으로 로드했습니다. (Source: {args.json_file}, ID: {args.id})")
+            print("-" * 50)
+            print(code_snippet)
+            print("-" * 50)
+
+        elif args.code:
+            code_snippet = args.code
+        else:
+            parser.print_help()
+            sys.exit(1)
+
+        # VulRAG의 통합된 파이프라인을 호출합니다.
+        # 이 함수 하나가 의미 추출, 검색, 분석, 판단, 패치 생성을 모두 처리합니다.
+        rag_system = VulRAG(enable_rag=not args.disable_rag)
+        final_result = rag_system.detect_vulnerabilities(code_snippet)
+
+        # 최종 결과를 보기 좋게 출력합니다.
+        print("\n\n" + "="*20 + " FINAL REPORT " + "="*20)
+        print(json.dumps(final_result, indent=4, ensure_ascii=False))
+        print("="*54)
+
+    except Exception as e:
+        print(f"\n프로그램 실행 중 에러가 발생했습니다: {e}", file=sys.stderr)
         sys.exit(1)
 
-    # create VulRAG instance
-    rag = VulRAG(enable_rag=not args.disable_rag)
-
-    # execute vulnerability detection
-    result = rag.detect_vulnerabilities(args.code)
-
-    # print result
-    print("\n=== vulnerability detection result ===")
-    print(f"status: {result['status']}")
-    if result['details']:
-        print("\nvulnerability details:")
-        for key, value in result['details'].items():
-            print(f"{key}: {value}")
-
-def test_vul_rag():
-    # code with vulnerability (race condition)
-    vulnerable_code = """
-    void process_data() {
-        // This code has a race condition vulnerability
-        rcu_read_lock();
-        shared_data->value++;
-        rcu_read_unlock();
-    }
-    """
-    
-    # fixed code
-    fixed_code = """
-    void process_data() {
-        // This code uses spin_lock to prevent race condition
-        spin_lock(&lock);
-        shared_data->value++;
-        spin_unlock(&lock);
-    }
-    """
-    
-    # create Vul-RAG instance
-    vul_rag = VulRAG()
-    
-    print("\n=== test vulnerable code ===")
-    result1 = vul_rag.detect_vulnerabilities(vulnerable_code)
-    print("\nresult:")
-    if result1["status"] == "vulnerable":
-        print("vulnerability found!")
-        print(f"vulnerability ID: {result1['details']['vulnerability_id']}")
-        print(f"cause: {result1['details']['cause']}")
-        print(f"solution: {result1['details']['solution']}")
-    else:
-        print("no vulnerability found")
-    
-    print("\n=== test fixed code ===")
-    result2 = vul_rag.detect_vulnerabilities(fixed_code)
-    print("\nresult:")
-    if result2["status"] == "vulnerable":
-        print("vulnerability found!")
-        print(f"vulnerability ID: {result2['details']['vulnerability_id']}")
-        print(f"cause: {result2['details']['cause']}")
-        print(f"solution: {result2['details']['solution']}")
-    else:
-        print("no vulnerability found")
 
 if __name__ == "__main__":
-    main() 
+    main()
