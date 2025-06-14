@@ -19,7 +19,7 @@ class OllamaClient:
         else:
             raise Exception(f"Error generating embedding: {response.text}")
 
-    def generate_completion(self, prompt, context=None, temperature=0.7):
+    def generate_completion(self, prompt, context=None, temperature=0.0):
         """generate text completion"""
         url = f"{self.base_url}/api/generate"
         body = {

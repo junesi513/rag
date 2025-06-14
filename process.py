@@ -79,12 +79,12 @@ class VulnerabilityProcessor:
                     print(f"Explanation: {final_judgment.get('explanation', 'N/A')}")
                     
                     if repair_suggestions.get("repair_suggestions"):
-                         print("\n--- Suggested Repair Actions ---")
-                         for suggestion in repair_suggestions.get("repair_suggestions", []):
-                             print(f"\n[Line {suggestion.get('line_number', '?')}]")
-                             print(f"  Reason: {suggestion.get('reason_for_change', 'N/A')}")
-                             print(f"  Original: {suggestion.get('original_content', '')}")
-                             print(f"  Modified: {suggestion.get('suggested_modification', '')}")
+                         print("\n--- Repair Candidates ---")
+                         for i, candidate in enumerate(repair_suggestions.get("repair_suggestions", []), 1):
+                             print(f"\n[Candidate #{i} for Line {candidate.get('line_number', '?')}]")
+                             print(f"  - Original: {candidate.get('original_content', 'N/A')}")
+                             print(f"  + Modified: {candidate.get('suggested_modification', 'N/A')}")
+                             print(f"  Reason: {candidate.get('reason_for_change', 'N/A')}")
                     
                     print("---------------------------------")
                     return {"status": "vulnerable", "details": final_result}
@@ -102,6 +102,15 @@ class VulnerabilityProcessor:
                      "analysis": analysis_for_repair,
                      "repair_suggestions": repair_suggestions
                  }
+
+                 if repair_suggestions.get("repair_suggestions"):
+                    print("\n--- Repair Candidates (Direct Analysis) ---")
+                    for i, candidate in enumerate(repair_suggestions.get("repair_suggestions", []), 1):
+                        print(f"\n[Candidate #{i} for Line {candidate.get('line_number', '?')}]")
+                        print(f"  - Original: {candidate.get('original_content', 'N/A')}")
+                        print(f"  + Modified: {candidate.get('suggested_modification', 'N/A')}")
+                        print(f"  Reason: {candidate.get('reason_for_change', 'N/A')}")
+
                  return {"status": "vulnerable_direct_analysis", "details": final_result}
              else:
                  return {"status": "not_vulnerable_direct_analysis", "details": direct_analysis_result}

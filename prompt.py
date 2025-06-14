@@ -3,7 +3,7 @@
 """프롬프트 템플릿 관리"""
 import json
 
-EXTRACT_SEMANTICS_PROMPT = """You are a code analysis system. Your task is to analyze the given vulnerable code and extract its functional semantics.
+EXTRACT_SEMANTICS_PROMPT = """You are a code analysis system. Your task is to analyze the given code and extract its functional semantics.
 
 IMPORTANT: Respond with ONLY a JSON object in this format:
 {{
@@ -58,19 +58,19 @@ Vulnerability causes:
 [Patch Information]
 {patch_info}"""
 
-REPAIR_PROMPT = """You are a security expert specializing in fixing code vulnerabilities. Based on the following vulnerability analysis, your task is to provide specific line-by-line repair suggestions.
+REPAIR_PROMPT = """You are a security expert specializing in fixing code vulnerabilities. Based on the following vulnerability analysis, your task is to generate about 10 different repair candidates.
 
 [Vulnerability Analysis]
 {vulnerability_analysis_json}
 
-IMPORTANT: For each vulnerable section identified in the analysis, provide a repair suggestion in the following JSON format. Respond with ONLY the JSON object. Do not provide the full repaired code.
+IMPORTANT: For each repair candidate, provide the details in the following JSON format. The entire response should be a single JSON object containing a list of candidates.
 {{
-  "repair_suggestions": [
+  "repair_candidates": [
     {{
-      "line_number": "The line number of the code that needs modification.",
-      "original_content": "The original, vulnerable line of code.",
-      "suggested_modification": "The suggested, repaired line of code.",
-      "reason_for_change": "A brief explanation of why this change is necessary."
+      "delete_line": "The line number of the code to delete (or null if none).",
+      "delete_code": "The exact code to be deleted (or null if none).",
+      "added_line": "The line number for insertion (or null if none).",
+      "added_code": "The new code to be added (or null if none)."
     }}
   ]
 }}
@@ -88,7 +88,6 @@ IMPORTANT: Respond with ONLY a JSON object in this format:
 
 [Code to analyze]
 {code}"""
-
 
 def get_reference_info(rag_data=None):
     if not rag_data: return ""
