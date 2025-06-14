@@ -1,9 +1,9 @@
-# junesi513/rag/rag-8ee72d8e489f6f6dbff76adc48d163ed2208e189/start.py
+# start.py
 
 import json
 import argparse
 import sys
-from rag import VulRAG
+from process import VulnerabilityProcessor # VulRAG 대신 VulnerabilityProcessor를 임포트합니다.
 
 def load_code_from_json(json_path: str, vul_id: str) -> str:
     """JSON 파일에서 특정 id의 코드를 로드합니다."""
@@ -33,7 +33,6 @@ def load_code_from_json(json_path: str, vul_id: str) -> str:
     except json.JSONDecodeError:
         raise ValueError(f"잘못된 JSON 형식입니다: {json_path}")
     except Exception as e:
-        # 그 외 예외 처리
         raise type(e)(f"코드를 로드하는 중 에러 발생: {e}")
 
 
@@ -96,10 +95,9 @@ def main():
             parser.print_help()
             sys.exit(1)
 
-        # VulRAG의 통합된 파이프라인을 호출합니다.
-        # 이 함수 하나가 의미 추출, 검색, 분석, 판단, 패치 생성을 모두 처리합니다.
-        rag_system = VulRAG(enable_rag=not args.disable_rag)
-        final_result = rag_system.detect_vulnerabilities(code_snippet)
+        # 수정된 부분: VulnerabilityProcessor를 사용하여 파이프라인을 실행합니다.
+        processor = VulnerabilityProcessor(enable_rag=not args.disable_rag)
+        final_result = processor.run_analysis_pipeline(code_snippet)
 
         # 최종 결과를 보기 좋게 출력합니다.
         print("\n\n" + "="*20 + " FINAL REPORT " + "="*20)

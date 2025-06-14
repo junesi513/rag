@@ -10,12 +10,16 @@ from prompt import (
     ANALYZE_VULNERABILITY_PROMPT,
     JUDGE_VULNERABILITY_PROMPT,
     REPAIR_PROMPT,
+    DIRECT_ANALYSIS_PROMPT,
     get_reference_info,
     get_semantics_info,
     get_analysis_context
 )
 
 class VulRAG:
+    """
+    RAG의 핵심 기능(검색, 분석, 생성)을 담당하는 클래스.
+    """
     def __init__(self, enable_rag: bool = True):
         self.enable_rag = enable_rag
         if enable_rag:
@@ -114,56 +118,9 @@ class VulRAG:
         response_text = self.ollama_client.generate_completion(prompt)
         return self._parse_llm_response(response_text)
 
-    def detect_vulnerabilities(self, code_snippet: str) -> Dict[str, Any]:
-        """전체 취약점 탐지 파이프라인"""
-        print("\n\n" + "="*50 + "\nVulnerability Detection Process Started\n" + "="*50)
-        
-        functional_semantics = self.extract_functional_semantics(code_snippet)
-        if self.enable_rag and functional_semantics.get("purpose") == "Unknown":
-            return {"status": "error", "details": "Failed to extract functional semantics."}
-
-        if self.enable_rag:
-            candidates = self.bm25_search(functional_semantics)
-            if not candidates:
-                print("\nNo similar known vulnerabilities found. Analyzing without RAG context.")
-                analysis_result = self.analyze_vulnerability(code_snippet, None, functional_semantics)
-                return {"status": "analyzed_without_rag", "details": analysis_result}
-            
-            reranked_candidates = self.rerank_with_rrf(candidates)
-            
-            print("\nFinal step: Judge vulnerability based on top candidates")
-            for candidate_hit in reranked_candidates:
-                knowledge_item = candidate_hit.get("_source", {}).get("metadata", {})
-                
-                analysis_result = self.analyze_vulnerability(code_snippet, knowledge_item, functional_semantics)
-                final_judgment = self.judge_vulnerability(code_snippet, knowledge_item, analysis_result)
-                
-                if final_judgment.get("is_vulnerable"):
-                    # 취약점이 확인된 경우에만 수리 제안 생성
-                    repair_suggestions = self.generate_repair_suggestions(analysis_result)
-                    
-                    final_result = {
-                        "judgment": final_judgment,
-                        "analysis": analysis_result,
-                        "repair_suggestions": repair_suggestions,
-                    }
-                    
-                    # 최종 결과 출력
-                    print("\n--- VULNERABILITY CONFIRMED ---")
-                    print(f"Based on: {knowledge_item.get('cve_id', 'Unknown')}")
-                    print(f"Severity: {final_judgment.get('severity', 'N/A')}")
-                    print(f"Explanation: {final_judgment.get('explanation', 'N/A')}")
-                    
-                    if repair_suggestions.get("repair_suggestions"):
-                         print("\n--- Suggested Repair Actions ---")
-                         for suggestion in repair_suggestions.get("repair_suggestions", []):
-                             print(f"\n[Line {suggestion.get('line_number', '?')}]")
-                             print(f"  Reason: {suggestion.get('reason_for_change', 'N/A')}")
-                             print(f"  Original: {suggestion.get('original_content', '')}")
-                             print(f"  Modified: {suggestion.get('suggested_modification', '')}")
-                    
-                    print("---------------------------------")
-                    return {"status": "vulnerable", "details": final_result}
-        
-        print("\n--- FINAL CONCLUSION: NOT VULNERABLE ---")
-        return {"status": "not_vulnerable", "details": "No vulnerabilities were confirmed based on the provided knowledge base."}
+    def direct_vulnerability_analysis(self, code_snippet: str) -> Dict[str, Any]:
+        """RAG를 사용하지 않고 LLM으로 직접 취약점을 분석합니다."""
+        print("\nPerforming direct vulnerability analysis (score threshold not met or RAG disabled)...")
+        prompt = DIRECT_ANALYSIS_PROMPT.format(code=code_snippet)
+        response_text = self.ollama_client.generate_completion(prompt)
+        return self._parse_llm_response(response_text)

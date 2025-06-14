@@ -3,7 +3,7 @@
 """프롬프트 템플릿 관리"""
 import json
 
-EXTRACT_SEMANTICS_PROMPT = """You are a code analysis system. Your task is to analyze the given code and extract its functional semantics.
+EXTRACT_SEMANTICS_PROMPT = """You are a code analysis system. Your task is to analyze the given vulnerable code and extract its functional semantics.
 
 IMPORTANT: Respond with ONLY a JSON object in this format:
 {{
@@ -75,6 +75,19 @@ IMPORTANT: For each vulnerable section identified in the analysis, provide a rep
   ]
 }}
 """
+
+DIRECT_ANALYSIS_PROMPT = """You are a vulnerability detection system. Your task is to analyze the provided code snippet directly for any potential security vulnerabilities.
+
+IMPORTANT: Respond with ONLY a JSON object in this format:
+{{
+    "is_vulnerable": true/false,
+    "explanation": "Detailed explanation of why the code is vulnerable or not",
+    "severity": "high/medium/low/none",
+    "recommendation": "Specific recommendations to fix the vulnerability if it exists"
+}}
+
+[Code to analyze]
+{code}"""
 
 
 def get_reference_info(rag_data=None):
