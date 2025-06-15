@@ -5,7 +5,7 @@ import argparse
 import sys
 from process import VulnerabilityProcessor # VulRAG 대신 VulnerabilityProcessor를 임포트합니다.
 
-def load_code_from_json(json_path: str, vul_id: str) -> str:
+def load_code_from_json(json_path: str, id: str) -> str:
     """JSON 파일에서 특정 id의 코드를 로드합니다."""
     try:
         with open(json_path, 'r', encoding='utf-8') as f:
@@ -14,10 +14,10 @@ def load_code_from_json(json_path: str, vul_id: str) -> str:
         if not isinstance(data, list):
             raise ValueError("JSON 파일은 배열(list) 형태여야 합니다.")
             
-        target_item = next((item for item in data if item.get('id') == vul_id), None)
+        target_item = next((item for item in data if item.get('id') == id), None)
             
         if target_item is None:
-            raise ValueError(f"ID '{vul_id}'에 해당하는 항목을 찾을 수 없습니다.")
+            raise ValueError(f"id '{id}'에 해당하는 항목을 찾을 수 없습니다.")
             
         files = target_item.get('files')
         if not files or not isinstance(files, list) or len(files) == 0:
@@ -50,7 +50,7 @@ def main():
      python start.py --disable-rag 'public class MyClass {{ ... }}'
 
   3. JSON 파일에서 코드 로드:
-     python start.py --json-file path/to/your/data.json --id cve-2022-1234
+     python start.py --json-file path/to/your/data.json --id 1
 '''
     )
     
@@ -70,7 +70,7 @@ def main():
     )
     parser.add_argument(
         '--id',
-        help='JSON 파일에서 로드할 코드의 ID'
+        help='JSON 파일에서 로드할 코드의 id'
     )
 
     args = parser.parse_args()
@@ -84,7 +84,7 @@ def main():
                 parser.error("--json-file 옵션과 직접 코드 입력은 동시에 사용할 수 없습니다.")
             
             code_snippet = load_code_from_json(args.json_file, args.id)
-            print(f"\n코드를 성공적으로 로드했습니다. (Source: {args.json_file}, ID: {args.id})")
+            print(f"\n코드를 성공적으로 로드했습니다. (Source: {args.json_file}, id: {args.id})")
             print("-" * 50)
             print(code_snippet)
             print("-" * 50)
