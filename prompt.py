@@ -12,14 +12,18 @@ Your only job is to provide a valid JSON object. Do not add any text or explanat
 
 {code}
 """
-
 ### 1. RAG 모드용 분석 및 JSON 생성 프롬프트 ###
-RAG_ANALYZE_JSON_PROMPT = """You are a world-class cybersecurity expert. Your SOLE task is to analyze the user's code, using the provided reference vulnerability, and generate a JSON object summarizing your findings.
+RAG_ANALYZE_JSON_PROMPT = """You are a world-class cybersecurity expert. Your SOLE task is to analyze the user's code, using the provided reference vulnerability and functional semantics, and generate a JSON object summarizing your findings.
 DO NOT write any introduction or explanation outside the JSON structure. Your entire response MUST be a single, valid JSON object.
+
+{semantics_info} 
+
 [Reference Vulnerability Information]
 {reference_info}
+
 [Code to Analyze]
 {code}
+
 IMPORTANT: Based on the reference and the code, respond with ONLY a JSON object in this exact format.
 {{
     "analysis_summary": "A concise summary explaining how the code is vulnerable in relation to the reference CVE.",
@@ -33,12 +37,15 @@ IMPORTANT: Based on the reference and the code, respond with ONLY a JSON object 
     ]
 }}
 """
-
 ### 2. Direct 모드용 분석 및 JSON 생성 프롬프트 ###
-DIRECT_ANALYZE_JSON_PROMPT = """You are a world-class cybersecurity expert. Your SOLE task is to meticulously analyze the user's code ON ITS OWN to find potential security flaws and generate a JSON object summarizing your findings.
+DIRECT_ANALYZE_JSON_PROMPT = """You are a world-class cybersecurity expert. Your SOLE task is to meticulously analyze the user's code ON ITS OWN, using the provided functional semantics, to find potential security flaws and generate a JSON object summarizing your findings.
 DO NOT write any introduction or explanation outside the JSON structure. Your entire response MUST be a single, valid JSON object.
+
+{semantics_info}
+
 [Code to Analyze]
 {code}
+
 IMPORTANT: Critically analyze the code and respond with ONLY a JSON object in this exact format. If no vulnerabilities are found, return an empty list for "vulnerable_sections".
 {{
     "analysis_summary": "A concise summary of your findings. If the code is secure, state that.",

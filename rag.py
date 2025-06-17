@@ -10,7 +10,8 @@ from prompt import (
     RAG_ANALYZE_JSON_PROMPT,
     DIRECT_ANALYZE_JSON_PROMPT,
     RAG_GENERATE_REPAIR_PLAN_PROMPT,
-    DIRECT_GENERATE_PATCH_PROMPT
+    DIRECT_GENERATE_PATCH_PROMPT,
+    get_semantics_info
 )
 
 class VulRAG:
@@ -95,15 +96,26 @@ class VulRAG:
         """[Step 1: 통합된 분석 및 JSON 생성] RAG/Direct 모드에 따라 적절한 프롬프트를 사용하여 분석을 수행하고 JSON을 반환합니다."""
         print("\nExecuting: Step 1 - Integrated Analysis & JSON Generation")
         
+        # --- 여기부터 수정 ---
+        # 1. get_semantics_info 헬퍼 함수를 호출하여 컨텍스트 문자열 생성
+        semantics_context = get_semantics_info(functional_semantics)
+        
         if self.enable_rag and rag_data:
             print("Using RAG-context-based analysis prompt.")
             reference_info = json.dumps(rag_data.get('vulnerability_causes', {}), indent=2)
+            # 2. format에 semantics_info 추가
             prompt = RAG_ANALYZE_JSON_PROMPT.format(
-                code=code_snippet, reference_info=reference_info
+                code=code_snippet, 
+                reference_info=reference_info,
+                semantics_info=semantics_context 
             )
         else:
             print("Using Direct-mode-specific analysis prompt.")
-            prompt = DIRECT_ANALYZE_JSON_PROMPT.format(code=code_snippet)
+            # 2. format에 semantics_info 추가
+            prompt = DIRECT_ANALYZE_JSON_PROMPT.format(
+                code=code_snippet,
+                semantics_info=semantics_context
+            )
             
         response_text = self._generate_and_clean(prompt)
         return self._parse_llm_response(response_text)
