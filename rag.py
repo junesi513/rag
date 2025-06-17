@@ -38,15 +38,32 @@ class VulRAG:
             return {}
 
     def extract_functional_semantics(self, code_snippet: str) -> Dict[str, str]:
-        """[Step 0: 기능적 의미 추출] 코드의 목적과 동작을 분석합니다."""
-        print("\nExecuting: Step 0 - Extract Functional Semantics")
+        """[1단계] 코드의 기능적 의미를 추출합니다. (디버깅 모드)"""
+        print("\nExecuting: Step 1 - Extract Functional Semantics")
+        
+        # 템플릿에 실제 코드를 삽입하여 최종 프롬프트를 완성합니다.
         prompt = EXTRACT_SEMANTICS_PROMPT.format(code=code_snippet)
-        response_text = self._generate_and_clean(prompt)
-        result = self._parse_llm_response(response_text)
-        # 실패 시 기본값 반환
-        if "purpose" not in result or "behavior" not in result:
-             return {"purpose": "Unknown", "behavior": "Unknown"}
-        return result
+        
+        # --- 디버깅을 위한 PRINT문 추가 (1) ---
+        # LLM에게 실제로 전달되는 프롬프트가 어떤 모습인지 확인합니다.
+        # 이 프롬프트의 JSON 예시에서 중괄호가 {{가 아닌 {로 보여야 정상입니다.
+        print("\n" + "="*20 + " [DEBUG] FINAL PROMPT SENT TO LLM " + "="*20)
+        print(prompt)
+        print("="*70 + "\n")
+        
+        # LLM을 호출하여 응답을 받습니다.
+        raw_response = self._generate_and_clean(prompt)
+        
+        # --- 디버깅을 위한 PRINT문 추가 (2) ---
+        # LLM이 생성한, 파싱하기 전의 '날것 그대로의' 응답을 확인합니다.
+        # 이 응답이 유효한 JSON 형태인지 눈으로 직접 확인해야 합니다.
+        print("\n" + "="*20 + " [DEBUG] RAW RESPONSE FROM LLM " + "="*20)
+        print(raw_response)
+        print("="*70 + "\n")
+        
+        # 응답을 파싱하여 딕셔너리로 변환합니다.
+        # 만약 raw_response가 유효한 JSON이 아니라면 여기서 에러가 발생합니다.
+        return self._parse_llm_response(raw_response)
 
     def bm25_search(self, query_text: str) -> List[Dict[str, Any]]:
         print("\nExecuting: RAG Search (BM25)")
@@ -74,7 +91,7 @@ class VulRAG:
         candidates.sort(key=lambda x: x.get("_score", 0), reverse=True)
         return candidates[:1]
 
-    def analyze_and_get_json(self, code_snippet: str, rag_data: Dict = None) -> Dict[str, Any]:
+    def analyze_and_get_json(self, code_snippet: str, rag_data: Dict = None, functional_semantics: Dict = None) -> Dict[str, Any]:
         """[Step 1: 통합된 분석 및 JSON 생성] RAG/Direct 모드에 따라 적절한 프롬프트를 사용하여 분석을 수행하고 JSON을 반환합니다."""
         print("\nExecuting: Step 1 - Integrated Analysis & JSON Generation")
         

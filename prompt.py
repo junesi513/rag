@@ -1,16 +1,17 @@
 # prompt.py (정리된 최종 버전)
 import json
 
-### 1. 기능 의미 추출  ###
-EXTRACT_SEMANTICS_PROMPT = """You are a code analysis system. Your task is to analyze the given a vulnerable code and extract its functional semantics.
-IMPORTANT: Respond with ONLY a JSON object in this format:
+### 1. 기능 의미 추출 ###
+EXTRACT_SEMANTICS_PROMPT = """You are a system that converts code into a structured JSON format.
+Your task is to summarize the code's purpose and its overall behavior in a single, concise sentence for each field.
+Your only job is to provide a valid JSON object. Do not add any text or explanations before or after the JSON object.
 {{
-    "purpose": "A concise description of the code's main purpose.",
-    "behavior": "A step-by-step list of the code's functional behaviors."
+    "purpose": "To provide a utility function for adding two integers.",
+    "behavior": "It takes two integers as input and returns their sum."
 }}
-[Vulnerable to analyze]
-{code}"""
 
+{code}
+"""
 
 ### 1. RAG 모드용 분석 및 JSON 생성 프롬프트 ###
 RAG_ANALYZE_JSON_PROMPT = """You are a world-class cybersecurity expert. Your SOLE task is to analyze the user's code, using the provided reference vulnerability, and generate a JSON object summarizing your findings.
